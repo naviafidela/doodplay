@@ -10,7 +10,7 @@ async def broadcast_message(client, message):
     """Kirim pesan ke semua user yang tersimpan di database"""
 
     # Hanya admin yang boleh broadcast (opsional, bisa kamu ganti ID kamu sendiri)
-    ADMIN_ID = [123456789]  # Ganti dengan user_id Telegram kamu (bisa beberapa)
+    ADMIN_ID = [1309757945]  # Ganti dengan user_id Telegram kamu (bisa beberapa)
     if message.from_user.id not in ADMIN_ID:
         await message.reply("🚫 Kamu tidak punya izin untuk melakukan broadcast.")
         return
