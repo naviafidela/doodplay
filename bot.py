@@ -1,6 +1,9 @@
-# bot.py
-from pyrogram import Client
+from pyrogram import Client, idle
 import asyncio
+import logging
+
+# Aktifkan logging agar bisa melihat pesan status
+logging.basicConfig(level=logging.INFO)
 
 # Ganti dengan kredensial bot Anda
 API_ID = 21404483                # Dapatkan dari https://my.telegram.org
@@ -13,16 +16,15 @@ app = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    plugins=dict(root="plugins")
+    plugins=dict(root="plugins")  # otomatis muat semua handler dari folder plugins/
 )
 
 async def main():
     print("🤖 Bot sedang berjalan...")
     await app.start()
-    await idle()
+    await idle()  # tetap berjalan menunggu pesan
     await app.stop()
     print("❌ Bot dihentikan.")
 
 if __name__ == "__main__":
-    from pyrogram import idle
     asyncio.run(main())
