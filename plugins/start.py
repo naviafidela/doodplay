@@ -20,13 +20,12 @@ async def start_command(client, message):
         try:
             async with session.post(API_URL, data=data) as resp:
                 result = await resp.text()
-                print(f"[INFO] Data terkirim ke API: {result}")
+                print(f"[INFO] : {result}")
         except Exception as e:
-            print(f"[ERROR] Gagal mengirim data ke API: {e}")
+            print(f"[ERROR] : {e}")
 
     # Kirim balasan ke user
     await message.reply_text(
         f"Halo {user.first_name or 'Teman'}! 👋\n"
-        "Kamu sudah terdaftar untuk menerima broadcast bot ini.\n\n"
         "Gunakan perintah /help untuk melihat fitur lain."
     )
