@@ -11,7 +11,7 @@ async def broadcast_message(client, message):
     """Kirim pesan ke semua user yang tersimpan di database, hapus jika gagal"""
 
     # Hanya admin yang boleh broadcast
-    ADMIN_ID = [123456789]  # Ganti dengan user_id kamu
+    ADMIN_ID = [1309757945]  # Ganti dengan user_id kamu
     if message.from_user.id not in ADMIN_ID:
         await message.reply("🚫 Kamu tidak punya izin untuk melakukan broadcast.")
         return
