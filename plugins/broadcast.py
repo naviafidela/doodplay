@@ -1,0 +1,59 @@
+from pyrogram import Client, filters
+import requests
+import logging
+
+# Ganti URL API kamu
+API_URL = "https://doodplay.net/provide/telegram/broadcast/add_user.php?view=json"
+
+@Client.on_message(filters.command("broadcast") & filters.reply)
+async def broadcast_message(client, message):
+    """Kirim pesan ke semua user yang tersimpan di database"""
+
+    # Hanya admin yang boleh broadcast (opsional, bisa kamu ganti ID kamu sendiri)
+    ADMIN_ID = [123456789]  # Ganti dengan user_id Telegram kamu (bisa beberapa)
+    if message.from_user.id not in ADMIN_ID:
+        await message.reply("🚫 Kamu tidak punya izin untuk melakukan broadcast.")
+        return
+
+    # Ambil pesan yang direply
+    target_message = message.reply_to_message
+    if not target_message:
+        await message.reply("❗ Reply ke pesan yang ingin dikirim, lalu ketik /broadcast")
+        return
+
+    await message.reply("📢 Mengirim broadcast ke semua pengguna...")
+
+    try:
+        # Ambil semua user_id dari API
+        response = requests.get(API_URL)
+        users = response.json()
+
+        if not users or not isinstance(users, list):
+            await message.reply("❌ Gagal mengambil data user dari server.")
+            return
+
+        success_count = 0
+        failed_count = 0
+
+        # Kirim pesan ke setiap user
+        for user in users:
+            user_id = user.get("user_id")
+            if not user_id:
+                continue
+            try:
+                await target_message.copy(user_id)
+                success_count += 1
+            except Exception as e:
+                logging.warning(f"Gagal kirim ke {user_id}: {e}")
+                failed_count += 1
+
+        await message.reply(
+            f"✅ Broadcast selesai!\n\n"
+            f"📬 Berhasil: {success_count}\n"
+            f"⚠️ Gagal: {failed_count}"
+        )
+
+    except Exception as e:
+        logging.error(f"Broadcast error: {e}")
+        await message.reply("❌ Terjadi kesalahan saat broadcast.")
+
