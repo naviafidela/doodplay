@@ -1,8 +1,9 @@
 from pyrogram import Client, filters
 
-@Client.on_message(filters.command("start") & filters.private)
+@Client.on_message(filters.command("start"))
 async def start_command(client, message):
     user = message.from_user.first_name or "Teman"
+    print(f"✅ Handler /start dijalankan oleh {user} ({message.chat.id})")
     await message.reply_text(
         f"Halo {user}! 👋\n"
         "Saya adalah bot Pyrogram sederhana.\n\n"
