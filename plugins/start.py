@@ -1,4 +1,5 @@
 from pyrogram import Client, filters
+from pyrogram.enums import ParseMode
 import aiohttp
 import base64
 import logging
@@ -65,7 +66,7 @@ async def start_command(client, message):
                                         f"🔖 Shortcode: <code>{shortcode}</code>\n\n"
                                         f"👉 <a href='{url}'>Tonton di sini</a>"
                                     ),
-                                    parse_mode="HTML",
+                                    parse_mode = ParseMode.HTML,
                                     quote=True
                                 )
 
