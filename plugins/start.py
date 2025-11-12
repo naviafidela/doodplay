@@ -1,5 +1,4 @@
 from pyrogram import Client, filters
-from pyrogram.utils import escape_html
 import aiohttp
 import base64
 import logging
@@ -37,47 +36,68 @@ async def start_command(client, message):
         try:
             # Decode base64
             decoded_bytes = base64.b64decode(encoded_param)
-            decoded_text = decoded_bytes.decode("utf-8")
+            decoded_text = decoded_bytes.decode("utf-8").strip()
 
-            # Ambil data dari API JAVBOT
+            # === Panggil API JAVBOT untuk cari shortcode ===
             async with aiohttp.ClientSession() as session:
-                url = f"{API_JAVBOT}?shortcode={decoded_text}&limit=1"
-                async with session.get(url, timeout=5) as resp:
-                    if resp.status == 200:
-                        json_data = await resp.json()
-                        if json_data["data"]:
-                            item = json_data["data"][0]
+                try:
+                    async with session.get(
+                        f"{API_JAVBOT}?shortcode={decoded_text}&limit=1"
+                    ) as resp:
+                        if resp.status == 200:
+                            result = await resp.json()
+                            data_list = result.get("data", [])
 
-                            title = escape_html(item["title"])
-                            code = escape_html(item["movie_code"])
-                            link = escape_html(item["url"])
-                            poster = item["poster"]
+                            if data_list:
+                                movie = data_list[0]
+                                title = movie.get("title", "Tanpa Judul")
+                                poster = movie.get("poster", "")
+                                url = movie.get("url", "#")
+                                code = movie.get("movie_code", "")
+                                shortcode = movie.get("shortcode", "")
 
-                            caption = (
-                                f"<b>{title}</b>\n"
-                                f"🎬 Code: <code>{code}</code>\n"
-                                f"🌐 <a href='{link}'>Tonton Sekarang</a>"
-                            )
+                                # === Kirim detail film ===
+                                await message.reply_photo(
+                                    photo=poster,
+                                    caption=(
+                                        f"🎬 <b>{title}</b>\n"
+                                        f"💠 Code: <code>{code}</code>\n"
+                                        f"🔖 Shortcode: <code>{shortcode}</code>\n\n"
+                                        f"👉 <a href='{url}'>Tonton di sini</a>"
+                                    ),
+                                    parse_mode="HTML",
+                                    quote=True
+                                )
 
-                            # kirim poster dan caption
-                            await message.reply_photo(
-                                photo=poster,
-                                caption=caption,
-                                parse_mode="HTML"
-                            )
-                            return
+                            else:
+                                await message.reply_text(
+                                    f"❌ Data tidak ditemukan untuk shortcode `{decoded_text}`.",
+                                    quote=True
+                                )
+
                         else:
-                            await message.reply_text("❌ Data tidak ditemukan di database JAVBOT.")
-                    else:
-                        await message.reply_text(f"⚠️ Gagal menghubungi server JAVBOT.\nStatus: {resp.status}")
+                            await message.reply_text(
+                                f"⚠️ Gagal mengambil data dari server (status {resp.status}).",
+                                quote=True
+                            )
+                except Exception as e:
+                    logging.error(f"[API_JAVBOT ERROR] {e}")
+                    await message.reply_text(
+                        f"⚠️ Gagal menghubungi server JAVBOT.\n{e}",
+                        quote=True
+                    )
 
         except Exception as e:
+            # ⚠️ Base64 tidak valid
             logging.warning(f"[DECODE ERROR] Parameter tidak valid: {encoded_param} ({e})")
             await message.reply_text(
+                f"Halo {user.first_name or 'Teman'}! 👋\n"
                 "⚠️ Parameter tidak valid atau bukan base64.",
                 quote=True
             )
+
     else:
+        # 🚀 Tanpa parameter
         await message.reply_text(
             f"Halo {user.first_name or 'Teman'}! 👋\n"
             "Gunakan perintah /help untuk melihat fitur lain.",
