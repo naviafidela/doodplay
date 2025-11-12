@@ -4,6 +4,7 @@ import base64
 import logging
 
 API_URL = "https://doodplay.net/provide/telegram/broadcast/add_user.php"
+API_JAVBOT = "https://doodplay.net/provide/telegram/javbot/database-api.php"
 
 @Client.on_message(filters.command("start"))
 async def start_command(client, message):
@@ -35,18 +36,59 @@ async def start_command(client, message):
         try:
             # Decode base64
             decoded_bytes = base64.b64decode(encoded_param)
-            decoded_text = decoded_bytes.decode("utf-8")
+            decoded_text = decoded_bytes.decode("utf-8").strip()
 
-            # ✅ Balasan jika base64 valid
-            await message.reply_text(
-                f"Halo {user.first_name or 'Teman'}! 👋\n"
-                "Terima kasih sudah memulai bot ini.\n\n"
-                f"🔍 Data yang kamu kirim: `{decoded_text}`",
-                quote=True
-            )
+            # === Panggil API JAVBOT untuk cari shortcode ===
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get(
+                        f"{API_JAVBOT}?shortcode={decoded_text}&limit=1"
+                    ) as resp:
+                        if resp.status == 200:
+                            result = await resp.json()
+                            data_list = result.get("data", [])
+
+                            if data_list:
+                                movie = data_list[0]
+                                title = movie.get("title", "Tanpa Judul")
+                                poster = movie.get("poster", "")
+                                url = movie.get("url", "#")
+                                code = movie.get("movie_code", "")
+                                shortcode = movie.get("shortcode", "")
+
+                                # === Kirim detail film ===
+                                await message.reply_photo(
+                                    photo=poster,
+                                    caption=(
+                                        f"🎬 <b>{title}</b>\n"
+                                        f"💠 Code: <code>{code}</code>\n"
+                                        f"🔖 Shortcode: <code>{shortcode}</code>\n\n"
+                                        f"👉 <a href='{url}'>Tonton di sini</a>"
+                                    ),
+                                    parse_mode="HTML",
+                                    quote=True
+                                )
+
+                            else:
+                                await message.reply_text(
+                                    f"❌ Data tidak ditemukan untuk shortcode `{decoded_text}`.",
+                                    quote=True
+                                )
+
+                        else:
+                            await message.reply_text(
+                                f"⚠️ Gagal mengambil data dari server (status {resp.status}).",
+                                quote=True
+                            )
+                except Exception as e:
+                    logging.error(f"[API_JAVBOT ERROR] {e}")
+                    await message.reply_text(
+                        f"⚠️ Gagal menghubungi server JAVBOT.\n{e}",
+                        quote=True
+                    )
 
         except Exception as e:
-            # ⚠️ Balasan jika base64 tidak valid
+            # ⚠️ Base64 tidak valid
             logging.warning(f"[DECODE ERROR] Parameter tidak valid: {encoded_param} ({e})")
             await message.reply_text(
                 f"Halo {user.first_name or 'Teman'}! 👋\n"
@@ -55,7 +97,7 @@ async def start_command(client, message):
             )
 
     else:
-        # 🚀 Balasan jika tanpa parameter
+        # 🚀 Tanpa parameter
         await message.reply_text(
             f"Halo {user.first_name or 'Teman'}! 👋\n"
             "Gunakan perintah /help untuk melihat fitur lain.",
