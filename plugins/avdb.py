@@ -1,82 +1,97 @@
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import requests
+from bs4 import BeautifulSoup
 import logging
 
-AVDB_SEARCH_URL = "https://avdbapi.com/search/?wd="
+BASE = "https://avdbapi.com"
+SEARCH_URL = "https://avdbapi.com/search/?wd="
 
 
 @Client.on_message(filters.command("avdb"))
 async def avdb_search(client, message):
-    """Melakukan pencarian AVDB berdasarkan query dari user."""
+    """Cari hasil AVDB dan ambil link /detail/..."""
 
-    # Ambil query setelah command
     parts = message.text.split(maxsplit=1)
 
-    # Jika /avdb saja (tanpa query)
+    # Jika /avdb tanpa query
     if len(parts) == 1:
         await message.reply(
-            "🔎 Tolong masukkan query.\n\n"
-            "Contoh:\n`/avdb MIDV-855`",
+            "🔎 Tolong masukkan query.\n\nContoh:\n`/avdb MIDV-855`",
             quote=True
         )
         return
 
     query = parts[1].strip()
-
     status_msg = await message.reply("⏳ Sedang mencari di AVDB...", quote=True)
 
     try:
-        # Request ke API
-        response = requests.get(AVDB_SEARCH_URL + query)
-        data = response.json()
+        # Ambil halaman HTML
+        r = requests.get(SEARCH_URL + query, timeout=10)
+        html = r.text
 
-        # Validasi hasil
-        if not data or "data" not in data or not data["data"]:
-            await status_msg.edit("❌ Tidak ada hasil ditemukan dari pencarian tersebut.")
+        soup = BeautifulSoup(html, "lxml")
+
+        # Ambil semua baris hasil pencarian
+        rows = soup.select("table tbody tr")
+        if not rows:
+            await status_msg.edit("❌ Tidak ada data ditemukan.")
             return
 
-        results = data["data"]
-
-        # Buat daftar link text
-        reply_text = "📄 *Hasil Pencarian:*\n\n"
-        buttons = []
-
-        for i, item in enumerate(results, start=1):
-            link = item.get("url")
-            if not link:
+        results = []
+        for row in rows:
+            cells = row.find_all("td")
+            if len(cells) < 2:
                 continue
 
+            # Kolom kedua adalah <a href="/detail/...">
+            detail_a = cells[1].find("a")
+            if not detail_a:
+                continue
+
+            relative = detail_a.get("href")  # contoh: /detail/midv-855-uncensored-leak/
+            if not relative.startswith("/detail/"):
+                continue
+
+            full_url = BASE + relative
+            results.append(full_url)
+
+        if not results:
+            await status_msg.edit("❌ Tidak ada result detail ditemukan.")
+            return
+
+        # Buat daftar text
+        reply_text = "📄 *Hasil Pencarian:* \n\n"
+        buttons = []
+
+        for i, link in enumerate(results, start=1):
             reply_text += f"{i}. {link}\n"
+            buttons.append(
+                [InlineKeyboardButton(str(i), callback_data=f"avdb_select|{link}")]
+            )
 
-            # Tambah tombol
-            buttons.append([InlineKeyboardButton(str(i), callback_data=f"avdb_select|{link}")])
-
-        # Kirim hasil + tombol
         await status_msg.edit(
             reply_text,
             reply_markup=InlineKeyboardMarkup(buttons)
         )
 
     except Exception as e:
-        logging.error(f"AVDB search error: {e}")
-        await status_msg.edit("❌ Terjadi kesalahan saat mengambil data dari AVDB.")
+        logging.error(f"AVDB scrape error: {e}")
+        await status_msg.edit("❌ Error saat memproses HTML AVDB.")
 
 
+# Klik tombol pilihan
 @Client.on_callback_query(filters.regex(r"^avdb_select\|"))
-async def avdb_selected(client, callback: CallbackQuery):
-    """User memilih salah satu link dari hasil pencarian."""
-
+async def avdb_selected(client, callback):
     try:
-        # Pecah callback data
         _, link = callback.data.split("|", 1)
 
         await callback.message.reply(
-            f"🔗 *Link yang kamu pilih:*\n{link}",
+            f"🔗 *Link detail yang kamu pilih:*\n{link}",
             quote=True
         )
+        await callback.answer("Diterima!")
 
-        await callback.answer("Dipilih!")
     except Exception as e:
         logging.error(f"Callback error: {e}")
         await callback.answer("Terjadi kesalahan.", show_alert=True)
