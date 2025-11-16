@@ -1,16 +1,37 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import requests
 from bs4 import BeautifulSoup
+import requests
 import logging
+import time
 
 BASE = "https://avdbapi.com"
 SEARCH_URL = "https://avdbapi.com/search/?wd="
 
 
+# ==============================
+# 🔄 REQUEST DENGAN RETRY
+# ==============================
+def fetch_with_retry(url, retries=3, timeout=25):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
+    for i in range(retries):
+        try:
+            return requests.get(url, headers=headers, timeout=timeout)
+        except Exception as e:
+            if i == retries - 1:
+                raise e
+            time.sleep(1.5)  # tunggu sebelum retry
+
+
+# ==============================
+# 🔍 /avdb SEARCH
+# ==============================
 @Client.on_message(filters.command("avdb"))
 async def avdb_search(client, message):
-    """Cari hasil AVDB dan ambil link /detail/..."""
+    """Cari hasil AVDB dan ambil list /detail/…"""
 
     parts = message.text.split(maxsplit=1)
 
@@ -26,42 +47,42 @@ async def avdb_search(client, message):
     status_msg = await message.reply("⏳ Sedang mencari di AVDB...", quote=True)
 
     try:
-        # Ambil halaman HTML
-        r = requests.get(SEARCH_URL + query, timeout=10)
+        # Ambil HTML dengan retry
+        r = fetch_with_retry(SEARCH_URL + query)
         html = r.text
 
         soup = BeautifulSoup(html, "lxml")
 
-        # Ambil semua baris hasil pencarian
+        # Ambil baris hasil tabel
         rows = soup.select("table tbody tr")
         if not rows:
             await status_msg.edit("❌ Tidak ada data ditemukan.")
             return
 
         results = []
+
         for row in rows:
             cells = row.find_all("td")
             if len(cells) < 2:
                 continue
 
-            # Kolom kedua adalah <a href="/detail/...">
             detail_a = cells[1].find("a")
             if not detail_a:
                 continue
 
-            relative = detail_a.get("href")  # contoh: /detail/midv-855-uncensored-leak/
-            if not relative.startswith("/detail/"):
+            href = detail_a.get("href")  # contoh: /detail/midv-855-uncensored-leak/
+            if not href.startswith("/detail/"):
                 continue
 
-            full_url = BASE + relative
+            full_url = BASE + href
             results.append(full_url)
 
         if not results:
             await status_msg.edit("❌ Tidak ada result detail ditemukan.")
             return
 
-        # Buat daftar text
-        reply_text = "📄 *Hasil Pencarian:* \n\n"
+        # Susun balasan
+        reply_text = "📄 *Hasil Pencarian:*\n\n"
         buttons = []
 
         for i, link in enumerate(results, start=1):
@@ -77,10 +98,12 @@ async def avdb_search(client, message):
 
     except Exception as e:
         logging.error(f"AVDB scrape error: {e}")
-        await status_msg.edit("❌ Error saat memproses HTML AVDB.")
+        await status_msg.edit("❌ Error saat memproses data dari AVDB.")
 
 
-# Klik tombol pilihan
+# ==============================
+# 🔘 Callback tombol
+# ==============================
 @Client.on_callback_query(filters.regex(r"^avdb_select\|"))
 async def avdb_selected(client, callback):
     try:
@@ -90,6 +113,7 @@ async def avdb_selected(client, callback):
             f"🔗 *Link detail yang kamu pilih:*\n{link}",
             quote=True
         )
+
         await callback.answer("Diterima!")
 
     except Exception as e:
