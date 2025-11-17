@@ -27,7 +27,7 @@ def fetch_with_retry(url, retries=3, timeout=25):
 # ==============================
 # 🔍 /avdb SEARCH
 # ==============================
-@Client.on_message(filters.command("avdb"))
+@Client.on_message(filters.command("avdbb"))
 async def avdb_search(client, message):
 
     parts = message.text.split(maxsplit=1)
