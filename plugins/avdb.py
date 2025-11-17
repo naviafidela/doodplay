@@ -126,34 +126,64 @@ async def avdb_choice(client, callback):
 
         await callback.answer("Mengambil detail...")
 
-        # -----------------------------
-        # SCRAPE HALAMAN DETAIL
-        # -----------------------------
+        # ==============================
+        # 🔍 SCRAPE DETAIL (mirip PHP)
+        # ==============================
         r = fetch_with_retry(detail_url)
-        soup = BeautifulSoup(r.text, "lxml")
+        html = r.text
 
-        # Kode video (biasanya di <h1>)
-        title = soup.select_one("h1")
-        kode = title.text.strip() if title else "Tidak ditemukan"
+        soup = BeautifulSoup(html, "lxml")
 
-        # Artis: selector bervariasi, ini paling umum di AVDB
-        actress = soup.select_one("a[href*='/actress/']")
-        artis = actress.text.strip() if actress else "Tidak ditemukan"
+        # -----------------------------
+        # 1️⃣ Movie Code (ambil dari slug URL)
+        # -----------------------------
+        # URL contoh:
+        # https://avdbapi.com/detail/midv-855-uncensored-leak/
+        slug = detail_url.rstrip("/").split("/")[-1]
 
-        # URL video (jika ada)
-        video = soup.select_one("video source")
-        video_url = video.get("src") if video else "Tidak ada URL video"
+        import re
+        m = re.search(r"([A-Za-z0-9]+-\d+)", slug)
+        movie_code = m.group(1).upper() if m else "Tidak ditemukan"
 
-        # Hapus data
+        # -----------------------------
+        # 2️⃣ Actors (mirip regex PHP)
+        # -----------------------------
+        actor = ""
+
+        # Cari block <span>Actor:</span> ... </div>
+        block = re.search(
+            r"<span[^>]*>\s*Actor:\s*</span>(.*?)</div>",
+            html,
+            re.IGNORECASE | re.DOTALL
+        )
+
+        if block:
+            names = re.findall(
+                r'<a[^>]*class="tag"[^>]*>(.*?)</a>',
+                block.group(1),
+                re.IGNORECASE | re.DOTALL
+            )
+            actor = ", ".join([n.strip() for n in names])
+        else:
+            actor = "Tidak ditemukan"
+
+        # -----------------------------
+        # 3️⃣ Video URL (mirip PHP)
+        # -----------------------------
+        video_url = f"https://upload18.com/play/index/{slug}"
+
+        # Hapus cache hasil
         del temp_results[chat_id]
 
-        # Kirim hasil
+        # ==============================
+        # 📤 KIRIM HASIL
+        # ==============================
         await callback.message.edit(
-            f"✅ *Detail Ditemukan*\n\n"
-            f"🎬 *Kode:* `{kode}`\n"
-            f"👤 *Artis:* {artis}\n"
-            f"🔗 *URL:* {video_url}\n\n"
-            f"📄 Detail lengkap:\n{detail_url}",
+            f"✅ *Detail Film*\n\n"
+            f"🎬 *Kode:* `{movie_code}`\n"
+            f"👤 *Artis:* {actor}\n"
+            f"🔗 *Video URL:* {video_url}\n\n"
+            f"📄 Detail: {detail_url}",
             disable_web_page_preview=True
         )
 
