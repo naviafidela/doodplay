@@ -77,10 +77,22 @@ async def avdb_search(client, message):
         # Tampilkan list + tombol nomor
         text = "📄 *Hasil ditemukan:*\n\n"
 
+        # === Inline keyboard 4 kolom ===
         buttons = []
-        for i, link in enumerate(results[:10], start=1):
-            text += f"{i}. {link}\n"
-            buttons.append([InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}")])
+        row = []
+        
+        for i in range(1, min(10, len(results)) + 1):
+            row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
+            
+            # setiap 4 tombol → buat baris baru
+            if len(row) == 4:
+                buttons.append(row)
+                row = []
+        
+        # jika sisa tombol tidak mencapai 4
+        if row:
+            buttons.append(row)
+
 
         await status.edit(
             text + "\n📌 Pilih nomor dengan tap tombol di bawah.",
