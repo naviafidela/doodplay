@@ -72,33 +72,35 @@ async def avdb_search(client, message):
             return await status.edit("❌ Tidak ada hasil detail.", disable_web_page_preview=True)
 
         # Simpan hasil untuk callback nanti
-        temp_results[message.chat.id] = results
+temp_results[message.chat.id] = results
 
-        # Tampilkan list + tombol nomor
-        text = "📄 *Hasil ditemukan:*\n\n"
+text = "📄 *Hasil ditemukan:*\n\n"
 
-        # === Inline keyboard 4 kolom ===
-        buttons = []
+for i, link in enumerate(results[:10], start=1):
+    text += f"{i}. {link}\n"
+
+text += "\n📌 Pilih nomor dengan tap tombol di bawah."
+
+# ========== INLINE BUTTON 4 KOLOM ==========
+buttons = []
+row = []
+
+for i in range(1, min(10, len(results)) + 1):
+    row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
+    if len(row) == 4:
+        buttons.append(row)
         row = []
-        
-        for i in range(1, min(10, len(results)) + 1):
-            row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
-            
-            # setiap 4 tombol → buat baris baru
-            if len(row) == 4:
-                buttons.append(row)
-                row = []
-        
-        # jika sisa tombol tidak mencapai 4
-        if row:
-            buttons.append(row)
 
+if row:
+    buttons.append(row)
+# ===========================================
 
-        await status.edit(
-            text + "\n📌 Pilih nomor dengan tap tombol di bawah.",
-            reply_markup=InlineKeyboardMarkup(buttons),
-            disable_web_page_preview=True
-        )
+await status.edit(
+    text,
+    reply_markup=InlineKeyboardMarkup(buttons),
+    disable_web_page_preview=True
+)
+
 
     except Exception as e:
         logging.error(e)
