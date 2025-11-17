@@ -72,39 +72,40 @@ async def avdb_search(client, message):
             return await status.edit("❌ Tidak ada hasil detail.", disable_web_page_preview=True)
 
         # Simpan hasil untuk callback nanti
-temp_results[message.chat.id] = results
+        temp_results[message.chat.id] = results
 
-text = "📄 *Hasil ditemukan:*\n\n"
+        text = "📄 *Hasil ditemukan:*\n\n"
 
-for i, link in enumerate(results[:10], start=1):
-    text += f"{i}. {link}\n"
+        for i, link in enumerate(results[:10], start=1):
+            text += f"{i}. {link}\n"
 
-text += "\n📌 Pilih nomor dengan tap tombol di bawah."
+        text += "\n📌 Pilih nomor dengan tap tombol di bawah."
 
-# ========== INLINE BUTTON 4 KOLOM ==========
-buttons = []
-row = []
-
-for i in range(1, min(10, len(results)) + 1):
-    row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
-    if len(row) == 4:
-        buttons.append(row)
+        # ========== INLINE BUTTON 4 KOLOM ==========
+        buttons = []
         row = []
 
-if row:
-    buttons.append(row)
-# ===========================================
+        for i in range(1, min(10, len(results)) + 1):
+            row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
+            if len(row) == 4:
+                buttons.append(row)
+                row = []
 
-await status.edit(
-    text,
-    reply_markup=InlineKeyboardMarkup(buttons),
-    disable_web_page_preview=True
-)
+        if row:
+            buttons.append(row)
 
+        # ===========================================
+
+        await status.edit(
+            text,
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True
+        )
 
     except Exception as e:
         logging.error(e)
         await status.edit("❌ Error mengambil data AVDB.", disable_web_page_preview=True)
+
 
 
 # ==============================
