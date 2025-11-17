@@ -6,7 +6,7 @@ import requests, logging, time
 BASE = "https://avdbapi.com"
 SEARCH_URL = "https://avdbapi.com/search/?wd="
 
-# Simpan hasil sementara berdasarkan chat_id
+# Temp hasil berdasarkan chat
 temp_results = {}
 
 
@@ -51,7 +51,7 @@ async def avdb_search(client, message):
 
         rows = soup.select("table tbody tr")
         if not rows:
-            return await status.edit("❌ Tidak ada data ditemukan.", disable_web_page_preview=True)
+            return await status.edit("❌ Tidak ada data ditemukan.")
 
         results = []
 
@@ -69,19 +69,18 @@ async def avdb_search(client, message):
                 results.append(BASE + href)
 
         if not results:
-            return await status.edit("❌ Tidak ada hasil detail.", disable_web_page_preview=True)
+            return await status.edit("❌ Tidak ada hasil detail.")
 
-        # Simpan hasil untuk callback nanti
+        # Simpan untuk callback
         temp_results[message.chat.id] = results
 
         text = "📄 *Hasil ditemukan:*\n\n"
-
         for i, link in enumerate(results[:10], start=1):
             text += f"{i}. {link}\n"
 
-        text += "\n📌 Pilih nomor dengan tap tombol di bawah."
+        text += "\n📌 Tap tombol nomor di bawah."
 
-        # ========== INLINE BUTTON 4 KOLOM ==========
+        # Tombol inline 4 per baris
         buttons = []
         row = []
 
@@ -90,11 +89,8 @@ async def avdb_search(client, message):
             if len(row) == 4:
                 buttons.append(row)
                 row = []
-
         if row:
             buttons.append(row)
-
-        # ===========================================
 
         await status.edit(
             text,
@@ -104,12 +100,11 @@ async def avdb_search(client, message):
 
     except Exception as e:
         logging.error(e)
-        await status.edit("❌ Error mengambil data AVDB.", disable_web_page_preview=True)
-
+        await status.edit("❌ Error mengambil data AVDB.")
 
 
 # ==============================
-# 🔘 CALLBACK: USER PILIH NOMOR
+# 🔘 CALLBACK: SCRAPE DETAIL
 # ==============================
 @Client.on_callback_query(filters.regex(r"^avdb_pick\|"))
 async def avdb_choice(client, callback):
@@ -117,28 +112,50 @@ async def avdb_choice(client, callback):
     try:
         _, num = callback.data.split("|")
         num = int(num)
-
         chat_id = callback.message.chat.id
 
-        # Pastikan ada data
         if chat_id not in temp_results:
-            return await callback.answer("Data tidak ditemukan.", show_alert=True)
+            return await callback.answer("Data kadaluarsa.", show_alert=True)
 
         results = temp_results[chat_id]
 
         if num < 1 or num > len(results):
             return await callback.answer("Nomor tidak valid.", show_alert=True)
 
-        # Edit pesan menjadi: "Anda telah memilih nomor X"
+        detail_url = results[num - 1]
+
+        await callback.answer("Mengambil detail...")
+
+        # -----------------------------
+        # SCRAPE HALAMAN DETAIL
+        # -----------------------------
+        r = fetch_with_retry(detail_url)
+        soup = BeautifulSoup(r.text, "lxml")
+
+        # Kode video (biasanya di <h1>)
+        title = soup.select_one("h1")
+        kode = title.text.strip() if title else "Tidak ditemukan"
+
+        # Artis: selector bervariasi, ini paling umum di AVDB
+        actress = soup.select_one("a[href*='/actress/']")
+        artis = actress.text.strip() if actress else "Tidak ditemukan"
+
+        # URL video (jika ada)
+        video = soup.select_one("video source")
+        video_url = video.get("src") if video else "Tidak ada URL video"
+
+        # Hapus data
+        del temp_results[chat_id]
+
+        # Kirim hasil
         await callback.message.edit(
-            f"✅ Anda telah memilih *nomor {num}*",
+            f"✅ *Detail Ditemukan*\n\n"
+            f"🎬 *Kode:* `{kode}`\n"
+            f"👤 *Artis:* {artis}\n"
+            f"🔗 *URL:* {video_url}\n\n"
+            f"📄 Detail lengkap:\n{detail_url}",
             disable_web_page_preview=True
         )
-
-        await callback.answer("Diproses!")
-
-        # Hapus data (opsional)
-        del temp_results[chat_id]
 
     except Exception as e:
         logging.error(e)
