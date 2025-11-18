@@ -290,3 +290,64 @@ async def receive_poster(client, message):
     # state berubah → menunggu klik upload_db
     pending_title_flow[uid]["state"] = "confirm_upload"
 
+
+# ==============================
+# 📤 CALLBACK: UPLOAD TO DATABASE
+# ==============================
+@Client.on_callback_query(filters.regex("upload_db"))
+async def upload_to_database(client, callback):
+
+    uid = callback.from_user.id
+
+    if uid not in pending_title_flow:
+        return await callback.answer("Data hilang, ulangi proses.", show_alert=True)
+
+    data = pending_title_flow[uid]
+
+    await callback.answer("Uploading...")
+
+    # Ambil file poster dari Telegram
+    poster_file = await client.download_media(data["poster"])
+
+    # Siapkan form-data untuk website
+    files = {
+        "poster": open(poster_file, "rb")
+    }
+
+    payload = {
+        "title": data["title"] or "",
+        "movie_code": data["code"],
+        "actor": data["actor"],
+        "url": data["video_url"],
+        "save": "1"
+    }
+
+    try:
+        resp = requests.post(
+            "https://doodplay.net/dashboard/uploads/javbot/upload.php",
+            data=payload,
+            files=files,
+            timeout=40
+        )
+
+        if resp.status_code == 200:
+            await callback.message.reply(
+                "✅ <b>Berhasil diupload ke Database!</b>",
+                parse_mode=ParseMode.HTML
+            )
+
+            # Hapus data
+            del pending_title_flow[uid]
+
+        else:
+            await callback.message.reply(
+                f"❌ <b>Gagal upload.</b>\nStatus: {resp.status_code}",
+                parse_mode=ParseMode.HTML
+            )
+
+    except Exception as e:
+        logging.error(e)
+        await callback.message.reply(
+            f"❌ <b>Error saat upload:</b> {e}",
+            parse_mode=ParseMode.HTML
+        )
