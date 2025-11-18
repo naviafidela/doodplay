@@ -30,20 +30,23 @@ def fetch_with_retry(url, retries=3, timeout=25):
 
 
 # ==============================
-# 🔍 /avdb SEARCH
+# 🔍 . SEARCH (tanpa /)
 # ==============================
-@Client.on_message(filters.command("avdb"))
+@Client.on_message(filters.regex(r"^\.\s*"))
 async def avdb_search(client, message):
 
-    parts = message.text.split(maxsplit=1)
-    if len(parts) == 1:
+    text = message.text.strip()
+
+    # Hilangkan karakter titik di awal
+    query = text.lstrip(".").strip()
+
+    if not query:
         return await message.reply(
-            "🔎 Contoh: <code>/avdb MIDV-855</code>",
+            "🔎 Contoh: <code>. MIDV-855</code>",
             parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         )
 
-    query = parts[1].strip()
     status = await message.reply(
         "⏳ Mencari di AVDB...",
         parse_mode=ParseMode.HTML,
