@@ -246,3 +246,47 @@ async def receive_title(client, message):
         f"📸 Silakan <b>upload posternya sekarang.</b>",
         parse_mode=ParseMode.HTML
     )
+
+
+# ==============================
+# 📸 USER MENGIRIM POSTER
+# ==============================
+@Client.on_message(filters.photo & filters.private)
+async def receive_poster(client, message):
+
+    uid = message.from_user.id
+    if uid not in pending_title_flow:
+        return  # abaikan jika tidak dalam flow
+
+    data = pending_title_flow[uid]
+
+    # Ambil file_id poster
+    file_id = message.photo.file_id
+    pending_title_flow[uid]["poster"] = file_id
+
+    # Caption informasi lengkap
+    caption = (
+        "📸 <b>Poster diterima!</b>\n\n"
+        f"📝 <b>Judul:</b> {data['title'] or '-'}\n"
+        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
+        f"👤 <b>Artis:</b> {data['actor']}\n"
+        f"🔗 <b>Video URL:</b> {data['video_url']}\n"
+    )
+
+    # Inline Button "Upload to Database"
+    buttons = InlineKeyboardMarkup([
+        [InlineKeyboardButton("📤 Upload to Database", callback_data="upload_db")]
+    ])
+
+    # Kirim ulang poster + informasi
+    await client.send_photo(
+        chat_id=uid,
+        photo=file_id,
+        caption=caption,
+        reply_markup=buttons,
+        parse_mode=ParseMode.HTML
+    )
+
+    # state berubah → menunggu klik upload_db
+    pending_title_flow[uid]["state"] = "confirm_upload"
+
