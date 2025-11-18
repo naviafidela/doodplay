@@ -81,7 +81,7 @@ async def avdb_search(client, message):
 
         text = "<b>📄 Hasil ditemukan:</b>\n\n"
         for i, link in enumerate(results[:10], start=1):
-            text += f"{i}. {link}\n"
+            text += f"[{i}]. {link}\n\n"
 
         text += "\n📌 Pilih nomor di bawah."
 
