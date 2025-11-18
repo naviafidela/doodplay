@@ -30,22 +30,38 @@ def fetch_with_retry(url, retries=3, timeout=25):
 
 
 # ==============================
-# 🔍 /avdb SEARCH
+# 🔎 AUTO SEARCH TANPA COMMAND
 # ==============================
-@Client.on_message(filters.command("avdb"))
-async def avdb_search(client, message):
 
-    parts = message.text.split(maxsplit=1)
-    if len(parts) == 1:
-        return await message.reply(
-            "🔎 Contoh: <code>/avdb MIDV-855</code>",
-            parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True
-        )
+import re
 
-    query = parts[1].strip()
+ALLOWED_PREFIX = ["SSIS", "DIVM", "MIDV", "ATID"]  # prefix yang diizinkan
+
+# Pola seri: huruf 2-5 + angka
+SERIES_PATTERN = re.compile(r"^([A-Za-z]{2,5})[-_ ]?(\d{2,4})$", re.IGNORECASE)
+
+
+@Client.on_message(filters.text & ~filters.command(None))
+async def avdb_auto_search(client, message):
+
+    raw = message.text.strip()
+    match = SERIES_PATTERN.match(raw)
+
+    if not match:
+        return  # bukan kode
+
+    prefix = match.group(1).upper()
+    number = match.group(2)
+
+    # cek prefix apakah diizinkan
+    if prefix not in ALLOWED_PREFIX:
+        return  # di luar daftar → abaikan
+
+    # Normalisasi jadi SSIS-209
+    query = f"{prefix}-{number}"
+
     status = await message.reply(
-        "⏳ Mencari di AVDB...",
+        f"⏳ Mencari <b>{query}</b>...",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
@@ -59,16 +75,13 @@ async def avdb_search(client, message):
             return await status.edit("❌ Tidak ada data ditemukan.", parse_mode=ParseMode.HTML)
 
         results = []
-
         for row in rows:
             cells = row.find_all("td")
             if len(cells) < 2:
                 continue
-
             a = cells[1].find("a")
             if not a:
                 continue
-
             href = a.get("href")
             if href.startswith("/detail/"):
                 results.append(BASE + href)
@@ -76,26 +89,24 @@ async def avdb_search(client, message):
         if not results:
             return await status.edit("❌ Tidak ada hasil detail.", parse_mode=ParseMode.HTML)
 
-        # Simpan hasil untuk callback
         temp_results[message.chat.id] = results
 
         text = "<b>📄 Hasil ditemukan:</b>\n\n"
         for i, link in enumerate(results[:10], start=1):
             text += f"<b>[{i}]</b> {link}\n\n"
 
-        text += "\n📌 Pilih nomor di bawah."
+        text += "📌 Pilih nomor di bawah."
 
-        # Inline tombol angka
         buttons = []
-        row = []
+        row_btn = []
 
         for i in range(1, min(10, len(results)) + 1):
-            row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
-            if len(row) == 4:
-                buttons.append(row)
-                row = []
-        if row:
-            buttons.append(row)
+            row_btn.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
+            if len(row_btn) == 4:
+                buttons.append(row_btn)
+                row_btn = []
+        if row_btn:
+            buttons.append(row_btn)
 
         await status.edit(
             text,
