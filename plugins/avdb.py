@@ -170,20 +170,17 @@ async def avdb_choice(client, callback):
         # Hapus cache search
         del temp_results[chat_id]
 
-        # ===================
         # Simpan untuk next step → input judul
-        # ===================
         pending_title_flow[callback.from_user.id] = {
             "code": movie_code,
             "actor": actor,
             "video_url": video_url,
             "slug": slug,
-            "detail": detail_url
+            "detail": detail_url,
+            "title": None
         }
 
-        # ===================
         # Kirim detail + button
-        # ===================
         await callback.message.edit(
             f"✅ *Detail Film*\n\n"
             f"🎬 *Kode:* `{movie_code}`\n"
@@ -217,7 +214,7 @@ async def cb_add_title(client, callback):
     if uid not in pending_title_flow:
         return await callback.answer("Data sudah kadaluarsa.", show_alert=True)
 
-    await callback.message.reply("✏️ Silakan *ketik judul* yang ingin ditambahkan.")
+    await callback.message.reply("✏️ Silakan *ketik judul* yang ingin ditambahkan.", quote=True)
     await callback.answer()
 
 
@@ -233,11 +230,14 @@ async def cb_no_title(client, callback):
     if uid not in pending_title_flow:
         return await callback.answer("Data sudah kadaluarsa.", show_alert=True)
 
-    pending_title_flow[uid]["title"] = None
+    data = pending_title_flow[uid]
 
     await callback.message.reply(
-        "📸 Kamu memilih *tanpa judul*.\n"
-        "Silakan *upload posternya sekarang.*"
+        f"❌ Kamu memilih tanpa judul.\n\n"
+        f"🎬 *Kode:* {data['code']}\n"
+        f"👤 *Artis:* {data['actor']}\n"
+        f"🔗 *Video URL:* {data['video_url']}\n\n"
+        f"📸 Silakan *upload posternya sekarang.*"
     )
 
     await callback.answer()
@@ -257,8 +257,12 @@ async def receive_title(client, message):
 
     title = message.text.strip()
     pending_title_flow[uid]["title"] = title
+    data = pending_title_flow[uid]
 
     await message.reply(
         f"📝 *Judul disimpan:* {title}\n\n"
-        "📸 Silakan *upload posternya sekarang.*"
+        f"🎬 *Kode:* {data['code']}\n"
+        f"👤 *Artis:* {data['actor']}\n"
+        f"🔗 *Video URL:* {data['video_url']}\n\n"
+        f"📸 Silakan *upload posternya sekarang.*"
     )
