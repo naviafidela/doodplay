@@ -130,7 +130,6 @@ async def avdb_choice(client, callback):
             return await callback.answer("Nomor tidak valid.", show_alert=True)
 
         detail_url = results[num - 1]
-        await callback.answer("Mengambil detail...")
 
         # ==============================
         # 🔍 SCRAPE DETAIL
