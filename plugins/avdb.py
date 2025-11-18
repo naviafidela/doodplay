@@ -1,5 +1,6 @@
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.enums import ParseMode
 from bs4 import BeautifulSoup
 import requests, logging, time, re
 
@@ -37,15 +38,15 @@ async def avdb_search(client, message):
     parts = message.text.split(maxsplit=1)
     if len(parts) == 1:
         return await message.reply(
-            "🔎 Contoh: `/avdb MIDV-855`",
-            quote=True,
+            "🔎 Contoh: <code>/avdb MIDV-855</code>",
+            parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         )
 
     query = parts[1].strip()
     status = await message.reply(
         "⏳ Mencari di AVDB...",
-        quote=True,
+        parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
 
@@ -55,7 +56,7 @@ async def avdb_search(client, message):
 
         rows = soup.select("table tbody tr")
         if not rows:
-            return await status.edit("❌ Tidak ada data ditemukan.")
+            return await status.edit("❌ Tidak ada data ditemukan.", parse_mode=ParseMode.HTML)
 
         results = []
 
@@ -73,12 +74,12 @@ async def avdb_search(client, message):
                 results.append(BASE + href)
 
         if not results:
-            return await status.edit("❌ Tidak ada hasil detail.")
+            return await status.edit("❌ Tidak ada hasil detail.", parse_mode=ParseMode.HTML)
 
-        # Simpan untuk callback
+        # Simpan hasil untuk callback
         temp_results[message.chat.id] = results
 
-        text = "📄 *Hasil ditemukan:*\n\n"
+        text = "<b>📄 Hasil ditemukan:</b>\n\n"
         for i, link in enumerate(results[:10], start=1):
             text += f"{i}. {link}\n"
 
@@ -98,13 +99,14 @@ async def avdb_search(client, message):
 
         await status.edit(
             text,
+            parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup(buttons),
             disable_web_page_preview=True
         )
 
     except Exception as e:
         logging.error(e)
-        await status.edit("❌ Error mengambil data AVDB.")
+        await status.edit("❌ Error mengambil data AVDB.", parse_mode=ParseMode.HTML)
 
 
 
@@ -158,9 +160,9 @@ async def avdb_choice(client, callback):
                 block.group(1),
                 re.IGNORECASE | re.DOTALL
             )
-            actor = ", ".join([n.strip() for n in names]) if names else "Tidak ditemukan"
+            actor = ", ".join([n.strip() for n in names]) if names else "Unknown"
         else:
-            actor = "Tidak ditemukan"
+            actor = "Unknown"
 
         # ===================
         # Video URL
@@ -182,12 +184,13 @@ async def avdb_choice(client, callback):
 
         # Kirim detail + button
         await callback.message.edit(
-            f"✅ *Detail Film*\n\n"
-            f"🎬 *Kode:* `{movie_code}`\n"
-            f"👤 *Artis:* {actor}\n"
-            f"🔗 *Video URL:* {video_url}\n\n"
-            f"📄 Detail: {detail_url}\n\n"
-            f"✏️ *Tambahkan judul?*",
+            f"<b>✅ Detail Film</b>\n\n"
+            f"🎬 <b>Kode:</b> <code>{movie_code}</code>\n"
+            f"👤 <b>Artis:</b> {actor}\n"
+            f"🔗 <b>Video URL:</b> {video_url}\n\n"
+            f"📄 <b>Detail:</b> {detail_url}\n\n"
+            f"✏️ <b>Tambahkan judul?</b>",
+            parse_mode=ParseMode.HTML,
             reply_markup=InlineKeyboardMarkup([
                 [
                     InlineKeyboardButton("➕ Tambah Judul", callback_data="add_title"),
@@ -214,7 +217,10 @@ async def cb_add_title(client, callback):
     if uid not in pending_title_flow:
         return await callback.answer("Data sudah kadaluarsa.", show_alert=True)
 
-    await callback.message.reply("✏️ Silakan *ketik judul* yang ingin ditambahkan.", quote=True)
+    await callback.message.reply(
+        "✏️ Silakan <b>ketik judul</b> yang ingin ditambahkan.",
+        parse_mode=ParseMode.HTML
+    )
     await callback.answer()
 
 
@@ -233,11 +239,12 @@ async def cb_no_title(client, callback):
     data = pending_title_flow[uid]
 
     await callback.message.reply(
-        f"❌ Kamu memilih tanpa judul.\n\n"
-        f"🎬 *Kode:* {data['code']}\n"
-        f"👤 *Artis:* {data['actor']}\n"
-        f"🔗 *Video URL:* {data['video_url']}\n\n"
-        f"📸 Silakan *upload posternya sekarang.*"
+        f"❌ <b>Kamu memilih tanpa judul.</b>\n\n"
+        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
+        f"👤 <b>Artis:</b> {data['actor']}\n"
+        f"🔗 <b>Video URL:</b> {data['video_url']}\n\n"
+        f"📸 Silakan <b>upload posternya sekarang.</b>",
+        parse_mode=ParseMode.HTML
     )
 
     await callback.answer()
@@ -260,9 +267,10 @@ async def receive_title(client, message):
     data = pending_title_flow[uid]
 
     await message.reply(
-        f"📝 *Judul disimpan:* {title}\n\n"
-        f"🎬 *Kode:* {data['code']}\n"
-        f"👤 *Artis:* {data['actor']}\n"
-        f"🔗 *Video URL:* {data['video_url']}\n\n"
-        f"📸 Silakan *upload posternya sekarang.*"
+        f"📝 <b>Judul disimpan:</b> {title}\n\n"
+        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
+        f"👤 <b>Artis:</b> {data['actor']}\n"
+        f"🔗 <b>Video URL:</b> {data['video_url']}\n\n"
+        f"📸 Silakan <b>upload posternya sekarang.</b>",
+        parse_mode=ParseMode.HTML
     )
