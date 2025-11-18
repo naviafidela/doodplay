@@ -6,7 +6,7 @@ import requests, logging, time
 BASE = "https://avdbapi.com"
 SEARCH_URL = "https://avdbapi.com/search/?wd="
 
-# Simpan hasil sementara berdasarkan chat_id
+# Temp hasil berdasarkan chat
 temp_results = {}
 
 
@@ -51,7 +51,7 @@ async def avdb_search(client, message):
 
         rows = soup.select("table tbody tr")
         if not rows:
-            return await status.edit("❌ Tidak ada data ditemukan.", disable_web_page_preview=True)
+            return await status.edit("❌ Tidak ada data ditemukan.")
 
         results = []
 
@@ -69,19 +69,18 @@ async def avdb_search(client, message):
                 results.append(BASE + href)
 
         if not results:
-            return await status.edit("❌ Tidak ada hasil detail.", disable_web_page_preview=True)
+            return await status.edit("❌ Tidak ada hasil detail.")
 
-        # Simpan hasil untuk callback nanti
+        # Simpan untuk callback
         temp_results[message.chat.id] = results
 
         text = "📄 *Hasil ditemukan:*\n\n"
-
         for i, link in enumerate(results[:10], start=1):
             text += f"{i}. {link}\n"
 
-        text += "\n📌 Pilih nomor dengan tap tombol di bawah."
+        text += "\n📌 Tap tombol nomor di bawah."
 
-        # ========== INLINE BUTTON 4 KOLOM ==========
+        # Tombol inline 4 per baris
         buttons = []
         row = []
 
@@ -90,11 +89,8 @@ async def avdb_search(client, message):
             if len(row) == 4:
                 buttons.append(row)
                 row = []
-
         if row:
             buttons.append(row)
-
-        # ===========================================
 
         await status.edit(
             text,
@@ -104,12 +100,11 @@ async def avdb_search(client, message):
 
     except Exception as e:
         logging.error(e)
-        await status.edit("❌ Error mengambil data AVDB.", disable_web_page_preview=True)
-
+        await status.edit("❌ Error mengambil data AVDB.")
 
 
 # ==============================
-# 🔘 CALLBACK: USER PILIH NOMOR
+# 🔘 CALLBACK: SCRAPE DETAIL
 # ==============================
 @Client.on_callback_query(filters.regex(r"^avdb_pick\|"))
 async def avdb_choice(client, callback):
@@ -117,28 +112,80 @@ async def avdb_choice(client, callback):
     try:
         _, num = callback.data.split("|")
         num = int(num)
-
         chat_id = callback.message.chat.id
 
-        # Pastikan ada data
         if chat_id not in temp_results:
-            return await callback.answer("Data tidak ditemukan.", show_alert=True)
+            return await callback.answer("Data kadaluarsa.", show_alert=True)
 
         results = temp_results[chat_id]
 
         if num < 1 or num > len(results):
             return await callback.answer("Nomor tidak valid.", show_alert=True)
 
-        # Edit pesan menjadi: "Anda telah memilih nomor X"
-        await callback.message.edit(
-            f"✅ Anda telah memilih *nomor {num}*",
-            disable_web_page_preview=True
+        detail_url = results[num - 1]
+
+        await callback.answer("Mengambil detail...")
+
+        # ==============================
+        # 🔍 SCRAPE DETAIL (mirip PHP)
+        # ==============================
+        r = fetch_with_retry(detail_url)
+        html = r.text
+
+        soup = BeautifulSoup(html, "lxml")
+
+        # -----------------------------
+        # 1️⃣ Movie Code (ambil dari slug URL)
+        # -----------------------------
+        # URL contoh:
+        # https://avdbapi.com/detail/midv-855-uncensored-leak/
+        slug = detail_url.rstrip("/").split("/")[-1]
+
+        import re
+        m = re.search(r"([A-Za-z0-9]+-\d+)", slug)
+        movie_code = m.group(1).upper() if m else "Tidak ditemukan"
+
+        # -----------------------------
+        # 2️⃣ Actors (mirip regex PHP)
+        # -----------------------------
+        actor = ""
+
+        # Cari block <span>Actor:</span> ... </div>
+        block = re.search(
+            r"<span[^>]*>\s*Actor:\s*</span>(.*?)</div>",
+            html,
+            re.IGNORECASE | re.DOTALL
         )
 
-        await callback.answer("Diproses!")
+        if block:
+            names = re.findall(
+                r'<a[^>]*class="tag"[^>]*>(.*?)</a>',
+                block.group(1),
+                re.IGNORECASE | re.DOTALL
+            )
+            actor = ", ".join([n.strip() for n in names])
+        else:
+            actor = "Tidak ditemukan"
 
-        # Hapus data (opsional)
+        # -----------------------------
+        # 3️⃣ Video URL (mirip PHP)
+        # -----------------------------
+        video_url = f"https://upload18.com/play/index/{slug}"
+
+        # Hapus cache hasil
         del temp_results[chat_id]
+
+        # ==============================
+        # 📤 KIRIM HASIL
+        # ==============================
+        await callback.message.edit(
+            f"✅ *Detail Film*\n\n"
+            f"🎬 *Kode:* `{movie_code}`\n"
+            f"👤 *Artis:* {actor}\n"
+            f"🔗 *Video URL:* {video_url}\n\n"
+            f"📄 Detail: {detail_url}",
+            disable_web_page_preview=True
+        )
 
     except Exception as e:
         logging.error(e)
