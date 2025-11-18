@@ -234,7 +234,7 @@ async def receive_title(client, message):
     if uid not in pending_title_flow:
         return
 
-    title = message.text.strip()
+    title = message.text.strip().title()
     pending_title_flow[uid]["title"] = title
     data = pending_title_flow[uid]
 
