@@ -83,9 +83,9 @@ async def avdb_search(client, message):
         for i, link in enumerate(results[:10], start=1):
             text += f"{i}. {link}\n"
 
-        text += "\n📌 Tap tombol nomor di bawah."
+        text += "\n📌 Pilih nomor di bawah."
 
-        # Tombol inline
+        # Inline tombol angka
         buttons = []
         row = []
 
@@ -130,7 +130,6 @@ async def avdb_choice(client, callback):
             return await callback.answer("Nomor tidak valid.", show_alert=True)
 
         detail_url = results[num - 1]
-
         await callback.answer("Mengambil detail...")
 
         # ==============================
@@ -139,15 +138,11 @@ async def avdb_choice(client, callback):
         r = fetch_with_retry(detail_url)
         html = r.text
 
-        # Slug dari URL
         slug = detail_url.rstrip("/").split("/")[-1]
-
         m = re.search(r"([A-Za-z0-9]+-\d+)", slug)
         movie_code = m.group(1).upper() if m else "Tidak ditemukan"
 
-        # ===================
-        # Ambil Actor:
-        # ===================
+        # Actor
         block = re.search(
             r"<span[^>]*>\s*Actor:\s*</span>(.*?)</div>",
             html,
@@ -164,15 +159,13 @@ async def avdb_choice(client, callback):
         else:
             actor = "Unknown"
 
-        # ===================
         # Video URL
-        # ===================
         video_url = f"https://upload18.com/play/index/{slug}"
 
         # Hapus cache search
         del temp_results[chat_id]
 
-        # Simpan untuk next step → input judul
+        # Simpan untuk flow judul
         pending_title_flow[callback.from_user.id] = {
             "code": movie_code,
             "actor": actor,
@@ -182,46 +175,26 @@ async def avdb_choice(client, callback):
             "title": None
         }
 
-        # Kirim detail + button
+        # Hanya 1 tombol → No Title
+        buttons = InlineKeyboardMarkup([
+            [InlineKeyboardButton("❌ No Title", callback_data="no_title")]
+        ])
+
         await callback.message.edit(
             f"<b>✅ Detail Film</b>\n\n"
             f"🎬 <b>Kode:</b> <code>{movie_code}</code>\n"
             f"👤 <b>Artis:</b> {actor}\n"
             f"🔗 <b>Video URL:</b> {video_url}\n\n"
             f"📄 <b>Detail:</b> {detail_url}\n\n"
-            f"✏️ <b>Tambahkan judul?</b>",
+            f"✏️ <b>Ketik judul sekarang.</b>",
             parse_mode=ParseMode.HTML,
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("➕ Tambah Judul", callback_data="add_title"),
-                    InlineKeyboardButton("❌ No Title", callback_data="no_title"),
-                ]
-            ]),
+            reply_markup=buttons,
             disable_web_page_preview=True
         )
 
     except Exception as e:
         logging.error(e)
         await callback.answer("Terjadi error.", show_alert=True)
-
-
-
-# ==============================
-# ➕ CALLBACK TAMBAH JUDUL
-# ==============================
-@Client.on_callback_query(filters.regex("add_title"))
-async def cb_add_title(client, callback):
-
-    uid = callback.from_user.id
-
-    if uid not in pending_title_flow:
-        return await callback.answer("Data sudah kadaluarsa.", show_alert=True)
-
-    await callback.message.reply(
-        "✏️ Silakan <b>ketik judul</b> yang ingin ditambahkan.",
-        parse_mode=ParseMode.HTML
-    )
-    await callback.answer()
 
 
 
@@ -234,12 +207,12 @@ async def cb_no_title(client, callback):
     uid = callback.from_user.id
 
     if uid not in pending_title_flow:
-        return await callback.answer("Data sudah kadaluarsa.", show_alert=True)
+        return await callback.answer("Data kadaluarsa.", show_alert=True)
 
     data = pending_title_flow[uid]
 
     await callback.message.reply(
-        f"❌ <b>Kamu memilih tanpa judul.</b>\n\n"
+        f"❌ <b>Tidak memakai judul.</b>\n\n"
         f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
         f"👤 <b>Artis:</b> {data['actor']}\n"
         f"🔗 <b>Video URL:</b> {data['video_url']}\n\n"
@@ -252,15 +225,14 @@ async def cb_no_title(client, callback):
 
 
 # ==============================
-# ✏️ USER MENGIRIM JUDUL
+# ✏️ USER KIRIM JUDUL
 # ==============================
-@Client.on_message(filters.text & ~filters.command(["avdb"]))
+@Client.on_message(filters.text & ~filters.command("avdb"))
 async def receive_title(client, message):
 
     uid = message.from_user.id
-
     if uid not in pending_title_flow:
-        return  # bukan flow judul
+        return
 
     title = message.text.strip()
     pending_title_flow[uid]["title"] = title
