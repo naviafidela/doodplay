@@ -33,7 +33,7 @@ def fetch_with_retry(url, retries=3, timeout=25):
 # 🔎 AUTO SEARCH TANPA COMMAND
 # ==============================
 
-ALLOWED_PREFIX = ["SSIS", "DIVM", "MIDV", "ATID"]  # prefix yang diizinkan
+ALLOWED_PREFIX = ["SSIS", "DIVM", "MIDV", "ATID"]
 
 # Pola seri: huruf 2-5 + angka
 SERIES_PATTERN = re.compile(r"^([A-Za-z]{2,5})[-_ ]?(\d{2,4})$", re.IGNORECASE)
@@ -189,7 +189,6 @@ async def avdb_choice(client, callback):
         ])
 
         await callback.message.edit(
-            f"📝 <b> Video Information</b>\n\n"
             f"➢ <b>Code:</b> <code>{movie_code}</code>\n"
             f"➢ <b>Actress:</b> {actor}\n"
             f"➢ <b>Video URL:</b> {video_url}\n\n"
@@ -219,9 +218,7 @@ async def cb_no_title(client, callback):
     data = pending_title_flow[uid]
 
     await callback.message.reply(
-        f"❌ Tidak memakai judul.\n\n"
-        f"📝 <b> Video Information</b>\n\n"
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
@@ -248,9 +245,7 @@ async def receive_title(client, message):
     data = pending_title_flow[uid]
 
     await message.reply(
-        f"✔ Judul disimpan.\n\n"
-        f"📝 <b> Video Information</b>\n\n"
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
@@ -277,9 +272,7 @@ async def receive_poster(client, message):
 
     # Caption informasi lengkap
     caption = (
-        "✔ Poster diterima!\n\n"
-        f"📝 <b> Video Information</b>\n\n"
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n"
