@@ -33,15 +33,13 @@ def fetch_with_retry(url, retries=3, timeout=25):
 # 🔎 AUTO SEARCH TANPA COMMAND
 # ==============================
 
-import re
-
 ALLOWED_PREFIX = ["SSIS", "DIVM", "MIDV", "ATID"]  # prefix yang diizinkan
 
 # Pola seri: huruf 2-5 + angka
 SERIES_PATTERN = re.compile(r"^([A-Za-z]{2,5})[-_ ]?(\d{2,4})$", re.IGNORECASE)
 
 
-@Client.on_message(filters.text & ~filters.command(None))
+@Client.on_message(filters.text & ~filters.regex(r"^/"))
 async def avdb_auto_search(client, message):
 
     raw = message.text.strip()
