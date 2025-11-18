@@ -212,6 +212,7 @@ async def cb_no_title(client, callback):
     await callback.message.reply(
         f"❌ Tidak memakai judul.\n\n"
         f"📝 <b> Video Information</b>\n\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
@@ -240,6 +241,7 @@ async def receive_title(client, message):
     await message.reply(
         f"✔ Judul disimpan.\n\n"
         f"📝 <b> Video Information</b>\n\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
