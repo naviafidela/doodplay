@@ -180,10 +180,11 @@ async def avdb_choice(client, callback):
         ])
 
         await callback.message.edit(
+            f"📝 <b> Video Information</b>\n\n"
             f"➢ <b>Code:</b> <code>{movie_code}</code>\n"
             f"➢ <b>Actress:</b> {actor}\n"
             f"➢ <b>Video URL:</b> {video_url}\n\n"
-            f"✏️ <b>Ketik judul sekarang.</b>",
+            f"✏️ Ketik judul sekarang.",
             parse_mode=ParseMode.HTML,
             reply_markup=buttons,
             disable_web_page_preview=True
@@ -209,11 +210,12 @@ async def cb_no_title(client, callback):
     data = pending_title_flow[uid]
 
     await callback.message.reply(
-        f"❌ <b>Tidak memakai judul.</b>\n\n"
+        f"❌ Tidak memakai judul.\n\n"
+        f"📝 <b> Video Information</b>\n\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
-        f"📸 Silakan <b>upload posternya sekarang.</b>",
+        f"📸 Silakan upload posternya sekarang.",
         parse_mode=ParseMode.HTML
     )
 
@@ -236,11 +238,12 @@ async def receive_title(client, message):
     data = pending_title_flow[uid]
 
     await message.reply(
-        f"📝 <b>Judul disimpan:</b> {title}\n\n"
+        f"✔ Judul disimpan.\n\n"
+        f"📝 <b> Video Information</b>\n\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
-        f"📸 Silakan <b>upload posternya sekarang.</b>",
+        f"📸 Silakan upload posternya sekarang.",
         parse_mode=ParseMode.HTML
     )
 
@@ -263,7 +266,8 @@ async def receive_poster(client, message):
 
     # Caption informasi lengkap
     caption = (
-        "📸 <b>Poster diterima!</b>\n\n"
+        "✔ Poster diterima!\n\n"
+        f"📝 <b> Video Information</b>\n\n"
         f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
@@ -272,7 +276,7 @@ async def receive_poster(client, message):
 
     # Inline Button "Upload to Database"
     buttons = InlineKeyboardMarkup([
-        [InlineKeyboardButton("📤 Upload to Database", callback_data="upload_db")]
+        [InlineKeyboardButton("ᴜᴘʟᴏᴀᴅ ᴋᴇ ᴅᴀᴛᴀʙᴀꜱᴇ", callback_data="upload_db")]
     ])
 
     # Kirim ulang poster + informasi
@@ -329,7 +333,7 @@ async def upload_to_database(client, callback):
 
         if resp.status_code == 200:
             await callback.message.reply(
-                "✅ <b>Berhasil diupload ke Database!</b>",
+                "✅ Berhasil diupload ke Database!",
                 parse_mode=ParseMode.HTML
             )
 
@@ -338,13 +342,13 @@ async def upload_to_database(client, callback):
 
         else:
             await callback.message.reply(
-                f"❌ <b>Gagal upload.</b>\nStatus: {resp.status_code}",
+                f"❌ Gagal upload.\nStatus: {resp.status_code}",
                 parse_mode=ParseMode.HTML
             )
 
     except Exception as e:
         logging.error(e)
         await callback.message.reply(
-            f"❌ <b>Error saat upload:</b> {e}",
+            f"❌ Error saat upload: {e}",
             parse_mode=ParseMode.HTML
         )
