@@ -30,37 +30,22 @@ def fetch_with_retry(url, retries=3, timeout=25):
 
 
 # ==============================
-# 🔎 AUTO SEARCH TANPA COMMAND
+# 🔍 /avdb SEARCH
 # ==============================
+@Client.on_message(filters.command("avdb"))
+async def avdb_search(client, message):
 
-ALLOWED_PREFIX = ["SSIS","DIVM","MIDV","ATID","SSNI","SNIS","SOE","SDDE","SDMU","SVDVD","SABA","STARS","STAR","STC","SAMA","SSPD","SCPX","SCOP","SCOT","SDAB","SDAM","SDMT","SDMM","SDNM","SERO","SWS","SW","SWE","IPX","IPZ","IPTD","IPRE","IPVR","IPZZ","IPIT","IPSD","IPKD","IPVE","IPCH","IPB","IPON","MIDE","MIAD","MIMK","MIRD","MIAB","MIAA","MIFD","MIUM","MIBB","MIVR","MIPD","MILK","ABP","ABS","ABW","ABF","ABM","ABN","ABY","PRED","PPT","PACO","PACOPACO","ADN","RBD","SHKD","JBD","ATVR","ADZ","RCTD","RCT","RCTB","CAWD","KAWD","KWBD","KWTK","EBOD","EBVR","EBDV","EBDC","HUNTA","HUNTC","HUNT","HND","HNDV","HOMA","HOMAQ","HMDV","WANZ","WAAA","WAZ","WAX","WAXX","WAT","PPPD","PPPE","OPST","OPPD","PPP","NHDTA","NHDT","NHVR","NHDTB","NHDTM","KMHRS","KMVR","KMDS","JUL","JUX","OBA","JUC","JULS","SIRO","SCUTE","SCRT","SIVR","SIROVR","DANDY","DNVR","DVDES","DVAJ","DVAJVR","DVMR","DVMD","ROE","ROYD","ROEBD","RKI","RKD","ROKV","HBAD","HERO","HERX","HDKA","HDV","GQ","GVRD","GQS","GEXP","RED","RHTS","RHJ","RAN","MSFH","MSTT","MSDA","MSD","MXBD","MXGS","XVSR","XVH","XVB","REAL","TRD","TPR","TRC","TRCVR","DASD","DLDSS","DPS","DVDMS","DTD","DTT","GAR","GKDS","GKD","GVG","GNE","IMBD","IMOB","IMVT","IMU","IMSG","JKSR","JKSF","JKBD","JKZ","KTRA","KTKP","KTR","KTPR","LAF","LUXU","LUXUO","MDVR","MDKM","MDUD","MDV","MMUS","MMS","MMM","MMND","NACR","NTR","NASH","NTRV","NTRS","ODFW","ODFA","ODF","ODN","OKSN","OKAD","OKAX","ORETD","OREC","ORECX","ORECS","PBD","PBP","PPSD","RCT","RCTB","RCTD","RCTC","SWE","SWN","SWF","SWG","TAMM","TAAK","TAKS","UMD","UMDV","UMAA","URBT","URE","UREX","URF","URVR","VEMA","VENU","VENX","VEC","VECX","VEDD","VOSS","VOB","VOVR","WFAV","WFR","WFX","WFVR","XRW","XRWX","XVS","XVR","YRH","YRHH","YRHN","YKN","ZIZG","ZEX","ZMAR","ZMEN","SABX","SABU","SABG","KBI","KBMS","KBVR","SMA","SMB","SMD","SME","SMEA","HODV","HOD","HODC","GS","GSFH","GSSB","GSB","HUNTB","HUNTP","HUNTX","NKKD","NKKV","NKKG","PGD","PGX","PGG","MDYD","MDB","MDNA","MDS","CESD","CEMD","CEND","RKB","RKV","RKX","BBI","BBB","BBD","BDSR","BDSB","MCSR","MCSF","MCBD","GANA","GANH","GANG","SDJS","SDJL","SDHS","HJP","HJS","HJMO","TRMA","TRMB","TRNR","GDTM","GDHH","BF","BFI","BEX","CRPD","CRP","CRV","CUCU","CUCT","CUUU","DDT","DDTM","DDR","EKDV","EKMF","EKDX","EVIS","EVIT","FSET","FSPE","FSDSS","FSDSSV","GSKS","GSS","HBB","HBD","HBM","HUNTJ","HUNTL","IPOO","IPUT","JKS","JKP","JKL","KDO","KDX","KD","LID","LILD","MADM","MADV","MEYD","MEKO","MGT","MGQ","MIGD","MIBB","MNK","MNKB","MRSS","MRSD","MSTN","NAMI","NAMA","NGOD","NGN","NSFS","NSPS","NTRD","NTRK","OIG","OIME","OIC","ONSD","ONED","ONT","PIYO","PIYP","POV","POVR","PPPF","PPPR","PSI","PSID","PTGN","PTKS","REBD","REB","RGL","RGLV","SIMM","SIMMZ","SKSK","SKSP","SPRD","SPR","SSDV","SSDP","THZ","THT","TS","TSGP","URET","URMN","VRTM","VRKM","VAGU","VAGZ","VENZ","XRL","XRLS","YRHJ","ZEXK","ZMAV"]
+    parts = message.text.split(maxsplit=1)
+    if len(parts) == 1:
+        return await message.reply(
+            "🔎 Contoh: <code>/avdb MIDV-855</code>",
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True
+        )
 
-
-# Pola seri: huruf 2-5 + angka
-SERIES_PATTERN = re.compile(r"^([A-Za-z]{2,5})[-_ ]?(\d{2,4})$", re.IGNORECASE)
-
-
-@Client.on_message(filters.text & ~filters.regex(r"^/"))
-async def avdb_auto_search(client, message):
-
-    raw = message.text.strip()
-    match = SERIES_PATTERN.match(raw)
-
-    if not match:
-        return  # bukan kode
-
-    prefix = match.group(1).upper()
-    number = match.group(2)
-
-    # cek prefix apakah diizinkan
-    if prefix not in ALLOWED_PREFIX:
-        return  # di luar daftar → abaikan
-
-    # Normalisasi jadi SSIS-209
-    query = f"{prefix}-{number}"
-
+    query = parts[1].strip()
     status = await message.reply(
-        f"⏳ Mencari <b>{query}</b>...",
+        "⏳ Mencari di AVDB...",
         parse_mode=ParseMode.HTML,
         disable_web_page_preview=True
     )
@@ -74,13 +59,16 @@ async def avdb_auto_search(client, message):
             return await status.edit("❌ Tidak ada data ditemukan.", parse_mode=ParseMode.HTML)
 
         results = []
+
         for row in rows:
             cells = row.find_all("td")
             if len(cells) < 2:
                 continue
+
             a = cells[1].find("a")
             if not a:
                 continue
+
             href = a.get("href")
             if href.startswith("/detail/"):
                 results.append(BASE + href)
@@ -88,24 +76,26 @@ async def avdb_auto_search(client, message):
         if not results:
             return await status.edit("❌ Tidak ada hasil detail.", parse_mode=ParseMode.HTML)
 
+        # Simpan hasil untuk callback
         temp_results[message.chat.id] = results
 
         text = "<b>📄 Hasil ditemukan:</b>\n\n"
         for i, link in enumerate(results[:10], start=1):
             text += f"<b>[{i}]</b> {link}\n\n"
 
-        text += "📌 Pilih nomor di bawah."
+        text += "\n📌 Pilih nomor di bawah."
 
+        # Inline tombol angka
         buttons = []
-        row_btn = []
+        row = []
 
         for i in range(1, min(10, len(results)) + 1):
-            row_btn.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
-            if len(row_btn) == 4:
-                buttons.append(row_btn)
-                row_btn = []
-        if row_btn:
-            buttons.append(row_btn)
+            row.append(InlineKeyboardButton(str(i), callback_data=f"avdb_pick|{i}"))
+            if len(row) == 4:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
 
         await status.edit(
             text,
@@ -190,6 +180,7 @@ async def avdb_choice(client, callback):
         ])
 
         await callback.message.edit(
+            f"📝 <b> Video Information</b>\n\n"
             f"➢ <b>Code:</b> <code>{movie_code}</code>\n"
             f"➢ <b>Actress:</b> {actor}\n"
             f"➢ <b>Video URL:</b> {video_url}\n\n"
@@ -219,7 +210,9 @@ async def cb_no_title(client, callback):
     data = pending_title_flow[uid]
 
     await callback.message.reply(
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
+        f"❌ Tidak memakai judul.\n\n"
+        f"📝 <b> Video Information</b>\n\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
@@ -246,7 +239,9 @@ async def receive_title(client, message):
     data = pending_title_flow[uid]
 
     await message.reply(
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
+        f"✔ Judul disimpan.\n\n"
+        f"📝 <b> Video Information</b>\n\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
@@ -273,7 +268,9 @@ async def receive_poster(client, message):
 
     # Caption informasi lengkap
     caption = (
-        f"➢ <b>Title:</b> {data['title'] or '-'}\n\n"
+        "✔ Poster diterima!\n\n"
+        f"📝 <b> Video Information</b>\n\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
         f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
         f"➢ <b>Actress:</b> {data['actor']}\n"
         f"➢ <b>Video URL:</b> {data['video_url']}\n"
