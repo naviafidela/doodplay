@@ -177,15 +177,13 @@ async def avdb_choice(client, callback):
 
         # Hanya 1 tombol → No Title
         buttons = InlineKeyboardMarkup([
-            [InlineKeyboardButton("❌ No Title", callback_data="no_title")]
+            [InlineKeyboardButton("ᴛɪᴅᴀᴋ ᴘᴀᴋᴀɪ ᴊᴜᴅᴜʟ", callback_data="no_title")]
         ])
 
         await callback.message.edit(
-            f"<b>✅ Detail Film</b>\n\n"
-            f"🎬 <b>Kode:</b> <code>{movie_code}</code>\n"
-            f"👤 <b>Artis:</b> {actor}\n"
-            f"🔗 <b>Video URL:</b> {video_url}\n\n"
-            f"📄 <b>Detail:</b> {detail_url}\n\n"
+            f"➢ <b>Code:</b> <code>{movie_code}</code>\n"
+            f"➢ <b>Actress:</b> {actor}\n"
+            f"➢ <b>Video URL:</b> {video_url}\n\n"
             f"✏️ <b>Ketik judul sekarang.</b>",
             parse_mode=ParseMode.HTML,
             reply_markup=buttons,
@@ -213,9 +211,9 @@ async def cb_no_title(client, callback):
 
     await callback.message.reply(
         f"❌ <b>Tidak memakai judul.</b>\n\n"
-        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
-        f"👤 <b>Artis:</b> {data['actor']}\n"
-        f"🔗 <b>Video URL:</b> {data['video_url']}\n\n"
+        f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
+        f"➢ <b>Actress:</b> {data['actor']}\n"
+        f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
         f"📸 Silakan <b>upload posternya sekarang.</b>",
         parse_mode=ParseMode.HTML
     )
@@ -240,9 +238,9 @@ async def receive_title(client, message):
 
     await message.reply(
         f"📝 <b>Judul disimpan:</b> {title}\n\n"
-        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
-        f"👤 <b>Artis:</b> {data['actor']}\n"
-        f"🔗 <b>Video URL:</b> {data['video_url']}\n\n"
+        f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
+        f"➢ <b>Actress:</b> {data['actor']}\n"
+        f"➢ <b>Video URL:</b> {data['video_url']}\n\n"
         f"📸 Silakan <b>upload posternya sekarang.</b>",
         parse_mode=ParseMode.HTML
     )
@@ -267,10 +265,10 @@ async def receive_poster(client, message):
     # Caption informasi lengkap
     caption = (
         "📸 <b>Poster diterima!</b>\n\n"
-        f"📝 <b>Judul:</b> {data['title'] or '-'}\n"
-        f"🎬 <b>Kode:</b> <code>{data['code']}</code>\n"
-        f"👤 <b>Artis:</b> {data['actor']}\n"
-        f"🔗 <b>Video URL:</b> {data['video_url']}\n"
+        f"➢ <b>Title:</b> {data['title'] or '-'}\n"
+        f"➢ <b>Code:</b> <code>{data['code']}</code>\n"
+        f"➢ <b>Actress:</b> {data['actor']}\n"
+        f"➢ <b>Video URL:</b> {data['video_url']}\n"
     )
 
     # Inline Button "Upload to Database"
