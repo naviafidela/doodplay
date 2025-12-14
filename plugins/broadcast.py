@@ -3,8 +3,8 @@ import requests
 import logging
 
 # Ganti URL API kamu
-API_GET_URL = "https://doodplay.net/provide/telegram/broadcast/add_user.php?view=json"
-API_DELETE_URL = "https://doodplay.net/provide/telegram/broadcast/delete_user.php"
+API_GET_URL = "https://doodplay.net/api/telegram/broadcast/add_user.php?view=json"
+API_DELETE_URL = "https://doodplay.net/api/telegram/broadcast/delete_user.php"
 
 @Client.on_message(filters.command("broadcast") & filters.reply)
 async def broadcast_message(client, message):
