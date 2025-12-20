@@ -49,29 +49,52 @@ async def start_command(client, message):
                             data_list = result.get("data", [])
 
                             if data_list:
-                                movie = data_list[0]
-                                title = movie.get("title", "Tanpa Judul")
-                                poster = movie.get("poster", "")
-                                url = movie.get("url", "#")
-                                code = movie.get("movie_code", "")
-                                shortcode = movie.get("shortcode", "")
-
-                                # === Kirim detail film dengan tombol inline ===
-                                buttons = InlineKeyboardMarkup([
-                                    [InlineKeyboardButton("ᴛᴏɴᴛᴏɴ ᴠɪᴅᴇᴏ ꜱᴇᴋᴀʀᴀɴɢ", url=url)]
-                                ])
-
-                                await message.reply_photo(
-                                    photo=poster,
-                                    caption=(
-                                        f"<b>{title}</b>\n"
-                                        f"💠 Code: <code>{code}</code>\n"
-                                        f"🔖 Shortcode: <code>{shortcode}</code>"
-                                    ),
-                                    parse_mode=ParseMode.HTML,
-                                    reply_markup=buttons,
-                                    quote=True
-                                )
+                            movie = data_list[0]
+                        
+                            raw_title = movie.get("title", "").strip()
+                            raw_code  = movie.get("movie_code", "").strip()
+                            actor     = movie.get("actor", "Unknown")
+                            poster    = movie.get("poster", "")
+                            url       = movie.get("url", "#")
+                            shortcode = movie.get("shortcode", "")
+                        
+                            # ===============================
+                            # BERSIHKAN MOVIE CODE
+                            # ===============================
+                            clean_code = raw_code
+                            match = re.match(r'^([A-Z]+-\d+)', raw_code)
+                            if match:
+                                clean_code = match.group(1)
+                        
+                            # ===============================
+                            # TITLE FINAL (SAMA SEPERTI PHP)
+                            # ===============================
+                            if raw_title:
+                                title_final = raw_title
+                            else:
+                                title_final = f"[{clean_code}]"
+                        
+                            # ===============================
+                            # INLINE BUTTON
+                            # ===============================
+                            buttons = InlineKeyboardMarkup([
+                                [InlineKeyboardButton("ᴛᴏɴᴛᴏɴ ᴠɪᴅᴇᴏ ꜱᴇᴋᴀʀᴀɴɢ", url=url)]
+                            ])
+                        
+                            # ===============================
+                            # KIRIM KE TELEGRAM
+                            # ===============================
+                            await message.reply_photo(
+                                photo=poster,
+                                caption=(
+                                    f"<b>{title_final}</b>\n"
+                                    f"💠 Code: <code>{clean_code}</code>\n"
+                                    f"🔖 Shortcode: <code>{shortcode}</code>"
+                                ),
+                                parse_mode=ParseMode.HTML,
+                                reply_markup=buttons,
+                                quote=True
+                            )
                             else:
                                 await message.reply_text(
                                     f"❌ Data tidak ditemukan untuk shortcode <code>{decoded_text}</code>.",
