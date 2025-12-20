@@ -63,3 +63,33 @@ async def broadcast_message(client, message):
     except Exception as e:
         logging.error(f"Broadcast error: {e}")
         await status_msg.edit("❌ Terjadi kesalahan saat broadcast.")
+
+@Client.on_message(filters.command("users"))
+async def total_users(client, message):
+    """Menampilkan jumlah user yang tersimpan di database"""
+
+    ADMIN_ID = [1309757945]  # samakan dengan admin broadcast
+
+    if message.from_user.id not in ADMIN_ID:
+        await message.reply("🚫 Kamu tidak punya izin.")
+        return
+
+    try:
+        response = requests.get(API_GET_URL, timeout=10)
+        users = response.json()
+
+        if not users or not isinstance(users, list):
+            await message.reply("❌ Gagal mengambil data user (format tidak valid).")
+            return
+
+        total = len(users)
+
+        await message.reply(
+            f"👥 <b>Total User Terdaftar</b>\n\n"
+            f"📊 Jumlah: <b>{total}</b>",
+            parse_mode="html"
+        )
+
+    except Exception as e:
+        logging.error(f"Users command error: {e}")
+        await message.reply("❌ Terjadi kesalahan saat mengambil data user.")
