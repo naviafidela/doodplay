@@ -54,7 +54,14 @@ async def start_command(client, message):
                                 poster = movie.get("poster", "")
                                 url = movie.get("url", "#")
                                 code = movie.get("movie_code", "")
+                                actor = movie.get("actor", "")
                                 shortcode = movie.get("shortcode", "")
+
+                                # === TITLE FINAL HANYA UNTUK CAPTION ===
+                                if title:
+                                    caption_title = f"{title} - {actor}"
+                                else:
+                                    caption_title = f"{actor} - [{code}]"
 
                                 # === Kirim detail film dengan tombol inline ===
                                 buttons = InlineKeyboardMarkup([
@@ -64,9 +71,7 @@ async def start_command(client, message):
                                 await message.reply_photo(
                                     photo=poster,
                                     caption=(
-                                        f"<b>{title}</b>\n"
-                                        f"💠 Code: <code>{code}</code>\n"
-                                        f"🔖 Shortcode: <code>{shortcode}</code>"
+                                        f"<b>🎥 {caption_title}</b>\n\n"
                                     ),
                                     parse_mode=ParseMode.HTML,
                                     reply_markup=buttons,
