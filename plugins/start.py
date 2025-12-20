@@ -58,7 +58,7 @@ async def start_command(client, message):
 
                                 # === Kirim detail film dengan tombol inline ===
                                 buttons = InlineKeyboardMarkup([
-                                    [InlineKeyboardButton("▶️ Tonton Sekarang", url=url)]
+                                    [InlineKeyboardButton("ᴛᴏɴᴛᴏɴ ᴠɪᴅᴇᴏ ꜱᴇᴋᴀʀᴀɴɢ", url=url)]
                                 ])
 
                                 await message.reply_photo(
