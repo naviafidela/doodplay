@@ -6,7 +6,7 @@ import base64
 import logging
 
 API_URL = "https://doodplay.net/api/telegram/broadcast/add_user.php"
-API_JAVBOT = "https://doodplay.net/api/telegram/javbot/database-api.php"
+API_JAVBOT = "https://doodplay.net/api/telegram/javbot/javbot-api.php"
 
 @Client.on_message(filters.command("start"))
 async def start_command(client, message):
