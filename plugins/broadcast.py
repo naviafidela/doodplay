@@ -85,9 +85,8 @@ async def total_users(client, message):
         total = len(users)
 
         await message.reply(
-            f"👥 <b>Total User Terdaftar</b>\n\n"
-            f"📊 Jumlah: <b>{total}</b>",
-            parse_mode="html"
+            f"👥 Total User Terdaftar\n\n"
+            f"📊 Jumlah: {total}"
         )
 
     except Exception as e:
