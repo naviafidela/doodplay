@@ -71,7 +71,7 @@ async def start_command(client, message):
                                 await message.reply_photo(
                                     photo=poster,
                                     caption=(
-                                        f"<b>🎥 {caption_title}</b>\n\n"
+                                        f"🎥 {caption_title}\n\n\n\n@JapanBestChannel"
                                     ),
                                     parse_mode=ParseMode.HTML,
                                     reply_markup=buttons,
